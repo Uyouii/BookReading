@@ -54,7 +54,15 @@ std::function<bool(const std::unique_ptr<Widget>&,
                   { return *p1 < *p2; };
 ```
 
+抛开词法上的啰嗦和需要指定重复的形参型别，使用std::function和auto还是有所不同。
 
+使用auto声明的、存储着一个闭包的变量和该闭包是同一型别，从而它要求的内存量也和该闭包一样。
+
+而使用std::function声明的、存储着一个闭包的变量是std::function的一个实例，所以不管给定的签名如何，它都占有固定尺寸的内存，而这个尺寸对于其储存的闭包而言不一定够用。这样的话，std::function的构造函数就会分配堆上的内存来储存该闭包。
+
+从结果上看，std::function对象一般都会比使用auto声明的变量使用更多内存。而且，编译器的实现细节一般都会限制内联。并会产生间接函数调用，把这些因素考虑在内的话，通过std::function来调用闭包机会必然会比通过auto声明的变量调用同一闭包来的要慢。
+
+在持有闭包的这场auto和std::function之间的较量中，auto可谓大获全胜（如果再来一场较量，在auto和std::function之间比较持有std::bind的调用结果，则比分则会是一样的）。
 
 
 
