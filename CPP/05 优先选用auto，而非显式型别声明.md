@@ -66,7 +66,54 @@ std::function<bool(const std::unique_ptr<Widget>&,
 
 
 
+### auto可以避免“型别捷径”（type shortcut）问题
+
+例如：
+
+```cpp
+std::vector<int> v;
+…
+unsigned sz = v.size();
+```
+
+v.size()的返回值型别应为std::vector<int>::size_type，但是std::vector<int>::size_type仅仅规定成一个无符号整型，在32位的机器上，该类型和unsigned是一样的，都是32位，但是在64位的机器上，unsigned是32位，std::vector<int>::size_type是64位。
+
+使用auto就可以解决这种问题。
 
 
 
+另一个例子：
 
+```cpp
+std::unordered_map<std::string, int> m;
+…
+
+for (const std::pair<std::string, int>& p : m)
+{
+  …                   // do something with p
+}
+```
+
+std::unordered_map的键值部分是const，所以哈希表中的std::pair的型别并不是std::pair<std::string, int>，而是std::pair<const std::string, int>。但是在上面的循环中，p的类型并不是这个。
+
+导致编译器需要将std::pair<const std::string, int>对象转换成std::pair<std::string, int>对象。
+
+这一步是可以成功的，方法是对m中的每个对象都做一次复制操作，形成一个p想要绑定的型别的临时对象，然后把p这个引用绑定到该临时对象。在每次循环结束的时候，该临时对象就会被析构一次。
+
+这样的错误可以轻松用auto化解:
+
+```cpp
+for (const auto& p : m)
+{
+  …                             // as before
+}
+```
+
+这样做的话，不仅运行效率可以提升，而且打字更少。
+
+使用auto的话，如果对p取地址，肯定会取得一个指到m中某个元素得指针。而那段没有使用auto的代码中，取得的是一个临时对象的指针，而且这个临时对象会在循环迭代结束时被析构。
+
+## 总结
+
+-   auto变量必须初始化，基本上对会导致兼容性和效率问题的型别不匹配现象免疫，还可以简化重构流程，通常也会比显示指定型别要少打一些字。
+-   auto型别的变量都有着条款2和条款6中的毛病
