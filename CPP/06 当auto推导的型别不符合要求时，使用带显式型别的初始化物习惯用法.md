@@ -33,3 +33,6 @@ processWidget的调用现在会导致未定义行为。
 
 它返回的是个std::vector<bool>::reference型别的对象(这是一个嵌套在std::vector<bool>)里面的类。
 
+之所以有std::vector<bool>::reference，是因为std::vector<bool>做过特化，用了一种压缩形式表示其持有的bool元素，每个bool元素用一个比特来表示。
+
+这种做法给std::vector<bool>的operator[]带来一个问题，因为按常理来说std::vector<T>的operator[]应该返回一个T&，然而C++中却禁止比特的引用。既然不能返回一个bool&，std::vector<bool>的operator[]转而返回了一个表现得像bool&的对象。实现这个效果的原理是，std::vector<bool>::reference做了一个向bool的隐式型别转换。  
